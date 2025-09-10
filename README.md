@@ -23,8 +23,8 @@ A standalone application for monitoring cryptocurrency prices in real-time, upda
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/coin_price_monitor_project.git
-cd coin_price_monitor_project
+git clone https://github.com/Sharex508/coin-monitor.git
+cd coin-monitor
 ```
 
 2. Create a virtual environment and install dependencies for the backend:
@@ -47,8 +47,8 @@ Note: The application uses SQLite as the database, which doesn't require any add
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/coin_price_monitor_project.git
-cd coin_price_monitor_project
+git clone https://github.com/Sharex508/coin-monitor.git
+cd coin-monitor
 ```
 
 2. Run with Docker Compose:

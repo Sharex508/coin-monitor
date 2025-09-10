@@ -45,6 +45,56 @@
   border-bottom-color: #007bff;
 }
 
+.search-container {
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  padding-right: 30px; /* Space for the clear button */
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.search-input:focus {
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.search-clear-button {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.search-clear-button:hover {
+  color: #dc3545;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 .dual-column-container {
   display: flex;
   flex: 1;
@@ -113,6 +163,13 @@
 .list-body {
   overflow-y: auto;
   flex-grow: 1;
+}
+
+.list-body p {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
 }
 
 .coin-item {

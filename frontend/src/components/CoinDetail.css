@@ -87,3 +87,193 @@
   color: #dc3545;
   font-weight: bold;
 }
+
+/* Trend Analysis Styles */
+.trend-analysis {
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #f8f9fa;
+}
+
+.trend-analysis h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10px;
+}
+
+.moving-averages {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.ma-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ma-card h4 {
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.ma-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 8px 0 0;
+  color: #333;
+}
+
+.trend-info {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 15px;
+}
+
+.trend-card, .cycle-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.trend-card h4, .cycle-card h4 {
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.trend-value, .cycle-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin: 8px 0 0;
+}
+
+/* Trend-specific styles */
+.trend-card.up .trend-value {
+  color: #28a745; /* Green for uptrend */
+}
+
+.trend-card.down .trend-value {
+  color: #dc3545; /* Red for downtrend */
+}
+
+.trend-card.neutral .trend-value {
+  color: #6c757d; /* Gray for neutral */
+}
+
+.cycle-value {
+  color: #333;
+}
+
+/* Recent Trades Styles */
+.recent-trades {
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #f8f9fa;
+}
+
+.recent-trades h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10px;
+}
+
+.trade-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.trade-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.trade-card h4 {
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.trade-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 8px 0 0;
+  color: #333;
+}
+
+.trade-value.buy {
+  color: #28a745; /* Green for buy */
+}
+
+.trade-value.sell {
+  color: #dc3545; /* Red for sell */
+}
+
+.trade-analysis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.trend-indicator, .binance-link {
+  background-color: white;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.trend-indicator h4, .binance-link h4 {
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.trend-indicator.bullish .trend-value {
+  color: #28a745; /* Green for bullish */
+}
+
+.trend-indicator.bearish .trend-value {
+  color: #dc3545; /* Red for bearish */
+}
+
+.trend-indicator.neutral .trend-value {
+  color: #6c757d; /* Gray for neutral */
+}
+
+.binance-button {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 16px;
+  background-color: #f0b90b; /* Binance yellow */
+  color: #212529;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.binance-button:hover {
+  background-color: #e6ae00;
+  text-decoration: none;
+}

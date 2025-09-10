@@ -11,6 +11,7 @@ from .coin_monitor import (
     update_coin_monitor, 
     update_latest_prices,
     get_coin_price_history,
+    get_recent_trades,
     CoinMonitor,
     CoinMonitorUpdate
 )
@@ -129,6 +130,27 @@ def get_coin_history(symbol: str):
         if not history:
             raise HTTPException(status_code=404, detail=f"Price history for symbol {symbol} not found")
         return history
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/coin-monitors/{symbol}/recent-trades", response_model=dict)
+def get_coin_recent_trades(symbol: str):
+    """
+    Endpoint to get recent trade statistics for a specific coin.
+
+    This endpoint returns a structured representation of the recent trade activity,
+    including the number of buy and sell trades, volumes, and a trend analysis
+    based on the last 3 minutes of trading data from Binance.
+
+    It also provides a direct link to the trading pair on Binance.
+    """
+    try:
+        trades = get_recent_trades(symbol)
+        if "error" in trades:
+            raise HTTPException(status_code=500, detail=trades["error"])
+        return trades
     except HTTPException:
         raise
     except Exception as e:

@@ -129,12 +129,22 @@ This guide will help you run the Coin Price Monitor application and view the UI 
    docker-compose --version
    ```
 
-2. Navigate to the project directory:
+2. Ensure Docker is running:
+   - **On macOS**: Open Docker Desktop from the Applications folder or Launchpad
+   - **On Windows**: Make sure Docker Desktop is running (check the whale icon in the system tray)
+   - **On Linux**: Verify the Docker service is active with `sudo systemctl status docker`
+
+   You can verify Docker is running properly with:
+   ```bash
+   docker info
+   ```
+
+3. Navigate to the project directory:
    ```bash
    cd /Users/harsha/Downloads/coin_price_monitor_project
    ```
 
-3. Build and start the containers:
+4. Build and start the containers:
    ```bash
    docker-compose up --build
    ```

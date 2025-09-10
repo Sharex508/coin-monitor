@@ -609,6 +609,7 @@ def get_coin_price_history(symbol: str):
                     low_price_8, high_price_8,
                     low_price_9, high_price_9,
                     low_price_10, high_price_10,
+                    ma7, ma25, ma99, trend, cycle_status,
                     created_at, updated_at
                 FROM coin_monitor
                 WHERE symbol = %s
@@ -627,6 +628,7 @@ def get_coin_price_history(symbol: str):
                     low_price_8, high_price_8,
                     low_price_9, high_price_9,
                     low_price_10, high_price_10,
+                    ma7, ma25, ma99, trend, cycle_status,
                     created_at, updated_at
                 FROM coin_monitor
                 WHERE symbol = ?
@@ -646,6 +648,15 @@ def get_coin_price_history(symbol: str):
                 "low_price": result[1],
                 "high_price": result[2],
                 "latest_price": result[3]
+            },
+            "moving_averages": {
+                "ma7": result[24],
+                "ma25": result[25],
+                "ma99": result[26]
+            },
+            "trend_analysis": {
+                "trend": result[27],
+                "cycle_status": result[28]
             },
             "history": []
         }
@@ -669,7 +680,7 @@ def get_coin_price_history(symbol: str):
             prev_cycle_high = None
             if i < 9:  # For all cycles except the last one
                 next_high_idx = high_idx + 2
-                if next_high_idx < len(result) - 2:  # Make sure we don't go out of bounds
+                if next_high_idx < 24:  # Make sure we don't go out of bounds (24 is the index of ma7)
                     prev_cycle_high = result[next_high_idx]
                     if prev_cycle_high == 0.0:  # If next cycle is not populated, don't show it
                         prev_cycle_high = None
@@ -682,8 +693,8 @@ def get_coin_price_history(symbol: str):
             })
 
         # Add timestamps
-        history["created_at"] = result[24]
-        history["updated_at"] = result[25]
+        history["created_at"] = result[29]
+        history["updated_at"] = result[30]
 
         return history
     except Exception as e:
@@ -693,6 +704,100 @@ def get_coin_price_history(symbol: str):
         if connection:
             cursor.close()
             connection.close()
+
+def get_recent_trades(symbol: str):
+    """
+    Get recent trades for a specific coin from Binance API and analyze buyer/seller activity.
+
+    Args:
+        symbol: The coin symbol
+
+    Returns:
+        dict: A dictionary containing recent trade statistics and analysis
+    """
+    try:
+        # Fetch recent trades from Binance API (last 3 minutes)
+        # Binance API returns trades in descending order (newest first)
+        current_time_ms = int(time.time() * 1000)
+        three_mins_ago_ms = current_time_ms - (3 * 60 * 1000)  # 3 minutes in milliseconds
+
+        # First get the most recent 1000 trades (API limit)
+        response = requests.get(
+            f'https://api.binance.com/api/v3/trades',
+            params={
+                'symbol': symbol,
+                'limit': 1000
+            },
+            timeout=10
+        )
+        response.raise_for_status()
+        trades = response.json()
+
+        # Filter trades from the last 3 minutes
+        recent_trades = [trade for trade in trades if trade['time'] >= three_mins_ago_ms]
+
+        if not recent_trades:
+            return {
+                "symbol": symbol,
+                "period": "3 minutes",
+                "total_trades": 0,
+                "buy_trades": 0,
+                "sell_trades": 0,
+                "buy_volume": 0,
+                "sell_volume": 0,
+                "buy_percentage": 0,
+                "sell_percentage": 0,
+                "average_trade_size": 0,
+                "trend": "Neutral",
+                "binance_link": f"https://www.binance.com/en/trade/{symbol.replace('USDT', '_USDT')}"
+            }
+
+        # Analyze trades
+        buy_trades = [trade for trade in recent_trades if trade['isBuyerMaker'] == False]
+        sell_trades = [trade for trade in recent_trades if trade['isBuyerMaker'] == True]
+
+        # Calculate volumes
+        buy_volume = sum(float(trade['qty']) for trade in buy_trades)
+        sell_volume = sum(float(trade['qty']) for trade in sell_trades)
+        total_volume = buy_volume + sell_volume
+
+        # Calculate percentages
+        buy_percentage = (buy_volume / total_volume * 100) if total_volume > 0 else 0
+        sell_percentage = (sell_volume / total_volume * 100) if total_volume > 0 else 0
+
+        # Calculate average trade size
+        total_trades = len(recent_trades)
+        average_trade_size = total_volume / total_trades if total_trades > 0 else 0
+
+        # Determine trend based on buy/sell ratio
+        trend = "Neutral"
+        if buy_percentage > 55:
+            trend = "Bullish"  # More buying than selling
+        elif sell_percentage > 55:
+            trend = "Bearish"  # More selling than buying
+
+        # Return structured data
+        return {
+            "symbol": symbol,
+            "period": "3 minutes",
+            "total_trades": total_trades,
+            "buy_trades": len(buy_trades),
+            "sell_trades": len(sell_trades),
+            "buy_volume": round(buy_volume, 4),
+            "sell_volume": round(sell_volume, 4),
+            "buy_percentage": round(buy_percentage, 2),
+            "sell_percentage": round(sell_percentage, 2),
+            "average_trade_size": round(average_trade_size, 4),
+            "trend": trend,
+            "binance_link": f"https://www.binance.com/en/trade/{symbol.replace('USDT', '_USDT')}"
+        }
+    except Exception as e:
+        logging.error(f"Error getting recent trades for {symbol}: {e}")
+        return {
+            "symbol": symbol,
+            "error": str(e),
+            "binance_link": f"https://www.binance.com/en/trade/{symbol.replace('USDT', '_USDT')}"
+        }
 
 def update_latest_prices():
     """Update the latest prices for all coins in the coin_monitor table."""

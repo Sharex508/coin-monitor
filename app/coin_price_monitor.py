@@ -168,8 +168,8 @@ def add_coin(symbol, price):
 
 def initialize_price_history(symbol, current_price):
     """
-    Initialize price history cycles for a newly added coin with varied values.
-    This prevents all cycles from having the same values.
+    Initialize only the first price history cycle for a newly added coin.
+    This allows the other cycles to develop naturally over time.
 
     Args:
         symbol: The coin symbol
@@ -178,85 +178,40 @@ def initialize_price_history(symbol, current_price):
     try:
         connection, cursor = get_database_connection()
 
-        # Create varied values for all 10 cycles
-        # Each cycle will have significantly different high and low prices
-
-        # Base variation factors - will be adjusted for each cycle
-        variation_factors = [
-            (1.03, 0.97),    # Cycle 1: Recent values (closest to current)
-            (1.06, 0.94),    # Cycle 2
-            (1.09, 0.91),    # Cycle 3
-            (1.12, 0.88),    # Cycle 4
-            (1.15, 0.85),    # Cycle 5
-            (1.18, 0.82),    # Cycle 6
-            (1.21, 0.79),    # Cycle 7
-            (1.24, 0.76),    # Cycle 8
-            (1.27, 0.73),    # Cycle 9
-            (1.30, 0.70),    # Cycle 10: Oldest values (furthest from current)
-        ]
+        # Only initialize the first cycle
+        # The other cycles will develop naturally over time
 
         # Add some randomness to make each coin's history unique
         import random
         random.seed(hash(symbol))  # Use symbol as seed for reproducibility
 
-        # Generate high and low prices for all cycles
-        high_prices = []
-        low_prices = []
+        # Calculate slightly different values for high and low prices
+        random_adjustment = random.uniform(0.98, 1.02)
+        high_factor = 1.03 * random_adjustment  # 3% higher with small random adjustment
+        low_factor = 0.97 / random_adjustment   # 3% lower with small random adjustment
 
-        for high_factor, low_factor in variation_factors:
-            # Add small random variation to each factor
-            random_adjustment = random.uniform(0.98, 1.02)
-            high_factor *= random_adjustment
-            low_factor /= random_adjustment
-
-            high_prices.append(current_price * high_factor)
-            low_prices.append(current_price * low_factor)
+        high_price = current_price * high_factor
+        low_price = current_price * low_factor
 
         # Build the update query based on connection type
         if isinstance(connection, psycopg2.extensions.connection):
             update_query = """
                 UPDATE coin_monitor
-                SET 
-                    high_price_1 = %s, low_price_1 = %s,
-                    high_price_2 = %s, low_price_2 = %s,
-                    high_price_3 = %s, low_price_3 = %s,
-                    high_price_4 = %s, low_price_4 = %s,
-                    high_price_5 = %s, low_price_5 = %s,
-                    high_price_6 = %s, low_price_6 = %s,
-                    high_price_7 = %s, low_price_7 = %s,
-                    high_price_8 = %s, low_price_8 = %s,
-                    high_price_9 = %s, low_price_9 = %s,
-                    high_price_10 = %s, low_price_10 = %s
+                SET high_price_1 = %s, low_price_1 = %s
                 WHERE symbol = %s
             """
         else:
             update_query = """
                 UPDATE coin_monitor
-                SET 
-                    high_price_1 = ?, low_price_1 = ?,
-                    high_price_2 = ?, low_price_2 = ?,
-                    high_price_3 = ?, low_price_3 = ?,
-                    high_price_4 = ?, low_price_4 = ?,
-                    high_price_5 = ?, low_price_5 = ?,
-                    high_price_6 = ?, low_price_6 = ?,
-                    high_price_7 = ?, low_price_7 = ?,
-                    high_price_8 = ?, low_price_8 = ?,
-                    high_price_9 = ?, low_price_9 = ?,
-                    high_price_10 = ?, low_price_10 = ?
+                SET high_price_1 = ?, low_price_1 = ?
                 WHERE symbol = ?
             """
 
-        # Flatten the parameters for the query
-        params = []
-        for i in range(10):
-            params.extend([high_prices[i], low_prices[i]])
-        params.append(symbol)
-
         # Execute the update
-        cursor.execute(update_query, params)
+        cursor.execute(update_query, (high_price, low_price, symbol))
         connection.commit()
 
-        logging.info(f"Initialized price history for coin {symbol} with varied values for all 10 cycles")
+        logging.info(f"Initialized first price history cycle for coin {symbol}")
         return True
     except Exception as e:
         logging.error(f"Error initializing price history for {symbol}: {e}")
@@ -358,6 +313,152 @@ def initialize_coin_monitor(symbols=None):
             cursor.close()
             connection.close()
 
+def calculate_moving_averages(symbol, connection, cursor):
+    """
+    Calculate moving averages (MA7, MA25, MA99) for a specific coin based on historical price data.
+
+    Args:
+        symbol: The coin symbol
+        connection: Database connection
+        cursor: Database cursor
+
+    Returns:
+        tuple: (ma7, ma25, ma99) - The calculated moving averages
+    """
+    try:
+        # Get the latest prices from the price_history table
+        if isinstance(connection, psycopg2.extensions.connection):
+            # PostgreSQL query with LIMIT
+            ma7_query = """
+                SELECT AVG(price) FROM (
+                    SELECT price FROM price_history 
+                    WHERE symbol = %s 
+                    ORDER BY timestamp DESC 
+                    LIMIT 7
+                ) AS recent_prices
+            """
+            ma25_query = """
+                SELECT AVG(price) FROM (
+                    SELECT price FROM price_history 
+                    WHERE symbol = %s 
+                    ORDER BY timestamp DESC 
+                    LIMIT 25
+                ) AS recent_prices
+            """
+            ma99_query = """
+                SELECT AVG(price) FROM (
+                    SELECT price FROM price_history 
+                    WHERE symbol = %s 
+                    ORDER BY timestamp DESC 
+                    LIMIT 99
+                ) AS recent_prices
+            """
+        else:
+            # SQLite query with LIMIT
+            ma7_query = """
+                SELECT AVG(price) FROM (
+                    SELECT price FROM price_history 
+                    WHERE symbol = ? 
+                    ORDER BY timestamp DESC 
+                    LIMIT 7
+                )
+            """
+            ma25_query = """
+                SELECT AVG(price) FROM (
+                    SELECT price FROM price_history 
+                    WHERE symbol = ? 
+                    ORDER BY timestamp DESC 
+                    LIMIT 25
+                )
+            """
+            ma99_query = """
+                SELECT AVG(price) FROM (
+                    SELECT price FROM price_history 
+                    WHERE symbol = ? 
+                    ORDER BY timestamp DESC 
+                    LIMIT 99
+                )
+            """
+
+        # Execute queries
+        cursor.execute(ma7_query, (symbol,))
+        ma7 = cursor.fetchone()[0] or 0.0
+
+        cursor.execute(ma25_query, (symbol,))
+        ma25 = cursor.fetchone()[0] or 0.0
+
+        cursor.execute(ma99_query, (symbol,))
+        ma99 = cursor.fetchone()[0] or 0.0
+
+        return ma7, ma25, ma99
+    except Exception as e:
+        logging.error(f"Error calculating moving averages for {symbol}: {e}")
+        return 0.0, 0.0, 0.0
+
+def identify_trend(price, ma7, ma25, ma99):
+    """
+    Identify the trend based on price and moving averages.
+
+    Args:
+        price: Current price
+        ma7: 7-period moving average
+        ma25: 25-period moving average
+        ma99: 99-period moving average
+
+    Returns:
+        tuple: (trend, cycle_status) - The identified trend and cycle status
+    """
+    # Default values
+    trend = "Neutral"
+    cycle_status = "Consolidation"
+
+    # Check if we have enough data for meaningful calculations
+    if ma7 == 0 or ma25 == 0:
+        return trend, cycle_status
+
+    # Calculate the percentage difference between MA7 and MA25
+    ma_diff_percent = abs(ma7 - ma25) / ma25 * 100
+
+    # Uptrend: When price candles are above the short-term MA (7) and MA(7) > MA(25)
+    if price > ma7 and ma7 > ma25:
+        trend = "UP"
+        cycle_status = "UP Cycle – bullish momentum"
+
+        # Check for cycle entry point: MA(7) crosses above MA(25) and price is above both
+        if ma_diff_percent < 0.5:  # MAs are close, potential crossover
+            cycle_status = "Begin Up Cycle – Possible Buy Zone"
+
+        # Check for cycle exit point: price touches MA(25) from above OR MA(7) starts bending downward
+        if price <= ma25 * 1.01:  # Price is close to MA25 (within 1%)
+            cycle_status = "Exit Long Position"
+
+    # Downtrend: When price candles are below the short-term MA (7) and MA(7) < MA(25)
+    elif price < ma7 and ma7 < ma25:
+        trend = "DOWN"
+        cycle_status = "DOWN Cycle – bearish momentum"
+
+        # Check for cycle entry point: MA(7) crosses below MA(25) and price is below both
+        if ma_diff_percent < 0.5:  # MAs are close, potential crossover
+            cycle_status = "Begin Down Cycle – Possible Sell Zone"
+
+        # Check for cycle exit point: price touches MA(25) from below OR MA(7) starts bending upward
+        if price >= ma25 * 0.99:  # Price is close to MA25 (within 1%)
+            cycle_status = "Exit Short Position"
+
+    # Neutral/Sideways: When MA(7) and MA(25) are close together and crossing frequently
+    else:
+        trend = "Neutral"
+        cycle_status = "Consolidation"
+
+    # Apply MA(99) as the macro trend filter
+    if ma99 > 0:
+        if price > ma99 and trend == "DOWN":
+            cycle_status += " (Above MA99: Prioritize long trades)"
+        elif price < ma99 and trend == "UP":
+            cycle_status += " (Below MA99: Prioritize short trades)"
+
+    return trend, cycle_status
+
 def update_coin_prices():
     """Update the latest prices for all coins in the coin_monitor table."""
     connection = None
@@ -379,6 +480,19 @@ def update_coin_prices():
         for symbol in symbols:
             if symbol in price_dict:
                 latest_price = price_dict[symbol]
+
+                # Store the price in the price_history table
+                if isinstance(connection, psycopg2.extensions.connection):
+                    insert_query = """
+                        INSERT INTO price_history (symbol, price)
+                        VALUES (%s, %s)
+                    """
+                else:
+                    insert_query = """
+                        INSERT INTO price_history (symbol, price)
+                        VALUES (?, ?)
+                    """
+                cursor.execute(insert_query, (symbol, latest_price))
 
                 # Get current high and low prices
                 # Use appropriate placeholder based on connection type
@@ -402,8 +516,14 @@ def update_coin_prices():
                 if latest_price < low_price:
                     low_price = latest_price
 
-                # Add to updates list
-                updates.append((latest_price, high_price, low_price, symbol))
+                # Calculate moving averages
+                ma7, ma25, ma99 = calculate_moving_averages(symbol, connection, cursor)
+
+                # Identify trend and cycle status
+                trend, cycle_status = identify_trend(latest_price, ma7, ma25, ma99)
+
+                # Add to updates list with moving averages and trend information
+                updates.append((latest_price, high_price, low_price, ma7, ma25, ma99, trend, cycle_status, symbol))
 
                 # Check if we need to update the price history
                 if update_price_history(symbol, high_price, low_price, latest_price):
@@ -415,17 +535,52 @@ def update_coin_prices():
             if isinstance(connection, psycopg2.extensions.connection):
                 update_query = """
                     UPDATE coin_monitor
-                    SET latest_price = %s, high_price = %s, low_price = %s, updated_at = CURRENT_TIMESTAMP
+                    SET latest_price = %s, high_price = %s, low_price = %s, 
+                        ma7 = %s, ma25 = %s, ma99 = %s, 
+                        trend = %s, cycle_status = %s,
+                        updated_at = CURRENT_TIMESTAMP
                     WHERE symbol = %s
                 """
             else:
                 update_query = """
                     UPDATE coin_monitor
-                    SET latest_price = ?, high_price = ?, low_price = ?, updated_at = CURRENT_TIMESTAMP
+                    SET latest_price = ?, high_price = ?, low_price = ?, 
+                        ma7 = ?, ma25 = ?, ma99 = ?, 
+                        trend = ?, cycle_status = ?,
+                        updated_at = CURRENT_TIMESTAMP
                     WHERE symbol = ?
                 """
             for update in updates:
                 cursor.execute(update_query, update)
+
+            # Clean up old price history data (keep only the last 100 entries per symbol)
+            if isinstance(connection, psycopg2.extensions.connection):
+                cleanup_query = """
+                    DELETE FROM price_history 
+                    WHERE id NOT IN (
+                        SELECT id FROM (
+                            SELECT id FROM price_history 
+                            WHERE symbol = %s 
+                            ORDER BY timestamp DESC 
+                            LIMIT 100
+                        ) AS recent_prices
+                    )
+                    AND symbol = %s
+                """
+            else:
+                cleanup_query = """
+                    DELETE FROM price_history 
+                    WHERE id NOT IN (
+                        SELECT id FROM price_history 
+                        WHERE symbol = ? 
+                        ORDER BY timestamp DESC 
+                        LIMIT 100
+                    )
+                    AND symbol = ?
+                """
+
+            for symbol in symbols:
+                cursor.execute(cleanup_query, (symbol, symbol))
 
             connection.commit()
             logging.info(f"Updated latest prices for {len(updates)} coins, updated history for {history_updates} coins")
@@ -621,11 +776,9 @@ def run_price_monitor():
     updated_prices_count = update_initial_prices()
     logging.info(f"Updated initial prices for {updated_prices_count} coins to match current prices")
 
-    # Force update all coins with varied price history
-    # This ensures all coins have unique cycle values
-    logging.info("Forcing update of all coin price histories to ensure varied cycle values")
-    updated_count = force_update_all_price_histories()
-    logging.info(f"Updated price history for {updated_count} coins with varied cycle values")
+    # Don't force update all coins with varied price history on startup
+    # Let the cycles develop naturally over time
+    # This prevents all 10 cycles from being completed immediately after Docker startup
 
     while True:
         try:

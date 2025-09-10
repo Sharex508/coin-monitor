@@ -5,10 +5,23 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'rising', 'falling'
   const [sortField, setSortField] = useState('change');
   const [sortDirection, setSortDirection] = useState('desc'); // 'asc' or 'desc'
+  const [searchTerm, setSearchTerm] = useState(''); // For search functionality
 
   // Separate coins into rising and falling
   const risingCoins = coins.filter(coin => coin.latest_price >= coin.initial_price);
   const fallingCoins = coins.filter(coin => coin.latest_price < coin.initial_price);
+
+  // Filter coins based on search term
+  const filterBySearchTerm = (coinsArray) => {
+    if (!searchTerm.trim()) return coinsArray;
+    return coinsArray.filter(coin => 
+      coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  const filteredCoins = filterBySearchTerm(coins);
+  const filteredRisingCoins = filterBySearchTerm(risingCoins);
+  const filteredFallingCoins = filterBySearchTerm(fallingCoins);
 
   // Helper function to safely calculate percentage change
   const calculatePercentChange = (latest, initial) => {
@@ -17,23 +30,33 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
   };
 
   // Sort function for coins
-  const sortCoins = (coinsToSort) => {
+  const sortCoins = (coinsToSort, customDirection, isFalling = false) => {
+    // Use the provided customDirection if available, otherwise use the state sortDirection
+    const direction = customDirection || sortDirection;
+
     return [...coinsToSort].sort((a, b) => {
       let aValue, bValue;
 
       if (sortField === 'change') {
         aValue = calculatePercentChange(a.latest_price, a.initial_price);
         bValue = calculatePercentChange(b.latest_price, b.initial_price);
+
+        // For falling coins, we want to sort by the absolute value of the percentage change
+        // This ensures coins with the largest percentage decrease (most negative values) appear at the top
+        if (isFalling) {
+          aValue = Math.abs(aValue);
+          bValue = Math.abs(bValue);
+        }
       } else if (sortField === 'price') {
         aValue = a.latest_price;
         bValue = b.latest_price;
       } else if (sortField === 'symbol') {
         aValue = a.symbol;
         bValue = b.symbol;
-        return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+        return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
       }
 
-      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      return direction === 'asc' ? aValue - bValue : bValue - aValue;
     });
   };
 
@@ -41,18 +64,17 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
   let displayedCoins;
   switch (activeTab) {
     case 'rising':
-      displayedCoins = sortCoins(risingCoins);
+      displayedCoins = sortCoins(filteredRisingCoins, 'desc');
       break;
     case 'falling':
-      displayedCoins = sortCoins(fallingCoins);
+      displayedCoins = sortCoins(filteredFallingCoins, 'desc', true);
       break;
     default:
-      displayedCoins = coins;
+      displayedCoins = filteredCoins;
   }
 
-  // Sort the rising and falling coins for the dual-column view
-  const sortedRisingCoins = sortCoins(risingCoins);
-  const sortedFallingCoins = sortCoins(fallingCoins);
+  // Sort the rising and falling coins for the dual-column view will be done in the render function
+  // to ensure consistent sorting with the current sortField and sortDirection
 
   // Helper function to determine current cycle
   const getCurrentCycle = (coin) => {
@@ -89,20 +111,41 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
           className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => setActiveTab('all')}
         >
-          All ({coins.length})
+          All ({filteredCoins.length})
         </button>
         <button 
           className={`tab-button ${activeTab === 'rising' ? 'active' : ''}`}
           onClick={() => setActiveTab('rising')}
         >
-          Rising ({risingCoins.length})
+          Rising ({filteredRisingCoins.length})
         </button>
         <button 
           className={`tab-button ${activeTab === 'falling' ? 'active' : ''}`}
           onClick={() => setActiveTab('falling')}
         >
-          Falling ({fallingCoins.length})
+          Falling ({filteredFallingCoins.length})
         </button>
+      </div>
+
+      <div className="search-container">
+        <div className="search-input-wrapper">
+          <input
+            type="text"
+            placeholder="Search by symbol..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button 
+              className="search-clear-button"
+              onClick={() => setSearchTerm('')}
+              title="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
 
       {activeTab === 'all' ? (
@@ -131,10 +174,10 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
               </span>
             </div>
             <div className="list-body">
-              {sortedRisingCoins.length === 0 ? (
-                <p>No rising coins</p>
+              {filteredRisingCoins.length === 0 ? (
+                <p>{searchTerm ? "No rising coins match your search" : "No rising coins"}</p>
               ) : (
-                sortedRisingCoins.map((coin) => {
+                sortCoins(filteredRisingCoins, 'desc').map((coin) => {
                   const priceChange = coin.latest_price - coin.initial_price;
                   const priceChangePercent = calculatePercentChange(coin.latest_price, coin.initial_price);
                   const cycle = getCurrentCycle(coin);
@@ -181,10 +224,10 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
               </span>
             </div>
             <div className="list-body">
-              {sortedFallingCoins.length === 0 ? (
-                <p>No falling coins</p>
+              {filteredFallingCoins.length === 0 ? (
+                <p>{searchTerm ? "No falling coins match your search" : "No falling coins"}</p>
               ) : (
-                sortedFallingCoins.map((coin) => {
+                sortCoins(filteredFallingCoins, 'desc', true).map((coin) => {
                   const priceChange = coin.latest_price - coin.initial_price;
                   const priceChangePercent = calculatePercentChange(coin.latest_price, coin.initial_price);
                   const cycle = getCurrentCycle(coin);
@@ -233,7 +276,7 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
           </div>
           <div className="list-body">
             {displayedCoins.length === 0 ? (
-              <p>No coins available</p>
+              <p>{searchTerm ? "No coins match your search" : "No coins available"}</p>
             ) : (
               displayedCoins.map((coin) => {
                 // Calculate price change percentage safely
