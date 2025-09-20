@@ -10,6 +10,10 @@ const CoinDetail = ({ symbol }) => {
   const [recentTrades, setRecentTrades] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [buyAmount, setBuyAmount] = useState(0);
+  const [sellAmount, setSellAmount] = useState(0);
+  const [buyPercentage, setBuyPercentage] = useState(0);
+  const [sellPercentage, setSellPercentage] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,31 +67,23 @@ const CoinDetail = ({ symbol }) => {
     return <div className="coin-detail">No history available for {symbol}</div>;
   }
 
+  const handleBuyPercentageChange = (e) => {
+    const percentage = parseInt(e.target.value);
+    setBuyPercentage(percentage);
+    // Calculate amount based on percentage (assuming a max amount of 1000 for example)
+    setBuyAmount((percentage / 100) * 1000);
+  };
+
+  const handleSellPercentageChange = (e) => {
+    const percentage = parseInt(e.target.value);
+    setSellPercentage(percentage);
+    // Calculate amount based on percentage (assuming a max amount of 1000 for example)
+    setSellAmount((percentage / 100) * 1000);
+  };
+
   return (
     <div className="coin-detail">
       <h2>{symbol} Details</h2>
-
-      <div className="price-info">
-        <div className="price-card">
-          <h3>Current Price</h3>
-          <p className="price-value">${coinHistory.current.latest_price.toFixed(7)}</p>
-        </div>
-
-        <div className="price-card">
-          <h3>Initial Price</h3>
-          <p className="price-value">${coinHistory.initial_price.toFixed(7)}</p>
-        </div>
-
-        <div className="price-card">
-          <h3>24h High</h3>
-          <p className="price-value">${coinHistory.current.high_price.toFixed(7)}</p>
-        </div>
-
-        <div className="price-card">
-          <h3>24h Low</h3>
-          <p className="price-value">${coinHistory.current.low_price.toFixed(7)}</p>
-        </div>
-      </div>
 
       {coinHistory.moving_averages && (
         <div className="trend-analysis">
@@ -116,35 +112,6 @@ const CoinDetail = ({ symbol }) => {
               <h4>Cycle Status</h4>
               <p className="cycle-value">{coinHistory.trend_analysis.cycle_status}</p>
             </div>
-          </div>
-        </div>
-      )}
-
-      <h3>Price History</h3>
-      {coinHistory.history.length === 0 ? (
-        <p>No price history available yet</p>
-      ) : (
-        <div className="history-table">
-          <div className="history-header">
-            <span>Set</span>
-            <span>Previous Cycle High</span>
-            <span>Low</span>
-            <span>High</span>
-            <span>Range</span>
-          </div>
-          <div className="history-body">
-            {coinHistory.history.map((item) => {
-              const range = ((item.high_price - item.low_price) / item.low_price * 100).toFixed(2);
-              return (
-                <div key={item.set} className="history-row">
-                  <span>{item.set}</span>
-                  <span>{item.prev_cycle_high ? `$${item.prev_cycle_high.toFixed(7)}` : '-'}</span>
-                  <span>${item.low_price.toFixed(7)}</span>
-                  <span>${item.high_price.toFixed(7)}</span>
-                  <span>{range}%</span>
-                </div>
-              );
-            })}
           </div>
         </div>
       )}
@@ -193,6 +160,97 @@ const CoinDetail = ({ symbol }) => {
           </div>
         </div>
       )}
+
+      <h3>Price History</h3>
+      {coinHistory.history.length === 0 ? (
+        <p>No price history available yet</p>
+      ) : (
+        <div className="history-table">
+          <div className="history-header">
+            <span>Set</span>
+            <span>Previous Cycle High</span>
+            <span>Low</span>
+            <span>High</span>
+            <span>Range</span>
+          </div>
+          <div className="history-body">
+            {coinHistory.history.map((item) => {
+              const range = ((item.high_price - item.low_price) / item.low_price * 100).toFixed(2);
+              return (
+                <div key={item.set} className="history-row">
+                  <span>{item.set}</span>
+                  <span>{item.prev_cycle_high ? `$${item.prev_cycle_high.toFixed(7)}` : '-'}</span>
+                  <span>${item.low_price.toFixed(7)}</span>
+                  <span>${item.high_price.toFixed(7)}</span>
+                  <span>{range}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="trade-section">
+        <h3>Buy/Sell {symbol}</h3>
+        <div className="trade-actions">
+          <div className="buy-section">
+            <h4>Buy {symbol}</h4>
+            <div className="percentage-slider">
+              <label htmlFor="buyPercentage">Amount: {buyPercentage}% (${buyAmount.toFixed(2)})</label>
+              <input
+                type="range"
+                id="buyPercentage"
+                min="0"
+                max="100"
+                step="5"
+                value={buyPercentage}
+                onChange={handleBuyPercentageChange}
+                className="slider"
+              />
+            </div>
+            <button className="buy-button">Buy {symbol}</button>
+          </div>
+          <div className="sell-section">
+            <h4>Sell {symbol}</h4>
+            <div className="percentage-slider">
+              <label htmlFor="sellPercentage">Amount: {sellPercentage}% (${sellAmount.toFixed(2)})</label>
+              <input
+                type="range"
+                id="sellPercentage"
+                min="0"
+                max="100"
+                step="5"
+                value={sellPercentage}
+                onChange={handleSellPercentageChange}
+                className="slider"
+              />
+            </div>
+            <button className="sell-button">Sell {symbol}</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="price-info">
+        <div className="price-card">
+          <h3>Current Price</h3>
+          <p className="price-value">${coinHistory.current.latest_price.toFixed(7)}</p>
+        </div>
+
+        <div className="price-card">
+          <h3>Initial Price</h3>
+          <p className="price-value">${coinHistory.initial_price.toFixed(7)}</p>
+        </div>
+
+        <div className="price-card">
+          <h3>24h High</h3>
+          <p className="price-value">${coinHistory.current.high_price.toFixed(7)}</p>
+        </div>
+
+        <div className="price-card">
+          <h3>24h Low</h3>
+          <p className="price-value">${coinHistory.current.low_price.toFixed(7)}</p>
+        </div>
+      </div>
 
       <div className="timestamp">
         Last updated: {new Date(coinHistory.updated_at).toLocaleString()}
