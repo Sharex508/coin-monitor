@@ -9,11 +9,35 @@
   overflow-y: auto;
 }
 
-.coin-detail h2 {
-  margin-top: 0;
-  color: #333;
+.detail-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
   border-bottom: 2px solid #f0f0f0;
   padding-bottom: 10px;
+}
+
+.back-button {
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 5px 10px;
+  margin-right: 15px;
+  font-size: 14px;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-button:hover {
+  background-color: #e9ecef;
+  color: #212529;
+}
+
+.coin-detail h2 {
+  margin: 0;
+  color: #333;
+  flex-grow: 1;
 }
 
 .price-info {

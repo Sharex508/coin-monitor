@@ -1,4 +1,10 @@
-version: '3'
+version: '3.8'
+
+# Enable BuildKit by default
+x-build-args: &build-args
+  DOCKER_BUILDKIT: 1
+  BUILDKIT_PROGRESS: plain
+  BUILDKIT_INLINE_CACHE: 1
 
 services:
   postgres:
@@ -8,7 +14,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: coin_monitor
     volumes:
-      - /var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
       - ./app/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
     ports:
       - "5432:5432"
@@ -19,7 +25,15 @@ services:
       retries: 5
 
   api:
-    build: .
+    build:
+      context: .
+      args:
+        <<: *build-args
+      # Cache from previous builds (disabled until cache is properly initialized)
+      # cache_from:
+      #   - type=local,src=./.buildcache/api
+      cache_to:
+        - type=local,dest=./.buildcache/api,mode=max
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,7 +48,7 @@ services:
       DEBUG: 'False'
     ports:
       - "8000:8000"
-    command: bash -c "cd /app && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect(('localhost', 8000)); s.close()"]
       interval: 10s
@@ -52,7 +66,10 @@ services:
         condition: service_healthy
     environment:
       - REACT_APP_API_URL=http://localhost:8000
+    # For development, mount source code for hot reloading
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
 
+volumes:
+  postgres-data:

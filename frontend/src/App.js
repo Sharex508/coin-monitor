@@ -19,6 +19,17 @@ function App() {
         setLoading(true);
         const response = await axios.get(`${API_URL}/api/coin-monitors`);
         setCoins(response.data);
+
+        // Check if there's a selected coin in localStorage
+        const savedCoinSymbol = localStorage.getItem('selectedCoinSymbol');
+        if (savedCoinSymbol) {
+          // Find the coin with the saved symbol
+          const savedCoin = response.data.find(coin => coin.symbol === savedCoinSymbol);
+          if (savedCoin) {
+            setSelectedCoin(savedCoin);
+          }
+        }
+
         setLoading(false);
       } catch (err) {
         setError('Error fetching coin data. Please try again later.');
@@ -37,6 +48,16 @@ function App() {
 
   const handleCoinSelect = (coin) => {
     setSelectedCoin(coin);
+    // Save selected coin to localStorage
+    if (coin) {
+      localStorage.setItem('selectedCoinSymbol', coin.symbol);
+    }
+  };
+
+  const handleBack = () => {
+    setSelectedCoin(null);
+    // Clear selected coin from localStorage
+    localStorage.removeItem('selectedCoinSymbol');
   };
 
   return (
@@ -56,7 +77,7 @@ function App() {
               onSelectCoin={handleCoinSelect} 
               selectedCoin={selectedCoin}
             />
-            {selectedCoin && <CoinDetail symbol={selectedCoin.symbol} />}
+            {selectedCoin && <CoinDetail symbol={selectedCoin.symbol} onBack={handleBack} />}
           </div>
         )}
       </main>

@@ -5,7 +5,7 @@ import './CoinDetail.css';
 // Get API URL from environment variable or use default
 const API_URL = process.env.REACT_APP_API_URL || '';
 
-const CoinDetail = ({ symbol }) => {
+const CoinDetail = ({ symbol, onBack }) => {
   const [coinHistory, setCoinHistory] = useState(null);
   const [recentTrades, setRecentTrades] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -83,7 +83,10 @@ const CoinDetail = ({ symbol }) => {
 
   return (
     <div className="coin-detail">
-      <h2>{symbol} Details</h2>
+      <div className="detail-header">
+        <button className="back-button" onClick={onBack}>← Back</button>
+        <h2>{symbol} Details</h2>
+      </div>
 
       {coinHistory.moving_averages && (
         <div className="trend-analysis">
@@ -161,35 +164,6 @@ const CoinDetail = ({ symbol }) => {
         </div>
       )}
 
-      <h3>Price History</h3>
-      {coinHistory.history.length === 0 ? (
-        <p>No price history available yet</p>
-      ) : (
-        <div className="history-table">
-          <div className="history-header">
-            <span>Set</span>
-            <span>Previous Cycle High</span>
-            <span>Low</span>
-            <span>High</span>
-            <span>Range</span>
-          </div>
-          <div className="history-body">
-            {coinHistory.history.map((item) => {
-              const range = ((item.high_price - item.low_price) / item.low_price * 100).toFixed(2);
-              return (
-                <div key={item.set} className="history-row">
-                  <span>{item.set}</span>
-                  <span>{item.prev_cycle_high ? `$${item.prev_cycle_high.toFixed(7)}` : '-'}</span>
-                  <span>${item.low_price.toFixed(7)}</span>
-                  <span>${item.high_price.toFixed(7)}</span>
-                  <span>{range}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       <div className="trade-section">
         <h3>Buy/Sell {symbol}</h3>
         <div className="trade-actions">
@@ -229,6 +203,35 @@ const CoinDetail = ({ symbol }) => {
           </div>
         </div>
       </div>
+
+      <h3>Price History</h3>
+      {coinHistory.history.length === 0 ? (
+        <p>No price history available yet</p>
+      ) : (
+        <div className="history-table">
+          <div className="history-header">
+            <span>Set</span>
+            <span>Previous Cycle High</span>
+            <span>Low</span>
+            <span>High</span>
+            <span>Range</span>
+          </div>
+          <div className="history-body">
+            {coinHistory.history.map((item) => {
+              const range = ((item.high_price - item.low_price) / item.low_price * 100).toFixed(2);
+              return (
+                <div key={item.set} className="history-row">
+                  <span>{item.set}</span>
+                  <span>{item.prev_cycle_high ? `$${item.prev_cycle_high.toFixed(7)}` : '-'}</span>
+                  <span>${item.low_price.toFixed(7)}</span>
+                  <span>${item.high_price.toFixed(7)}</span>
+                  <span>{range}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="price-info">
         <div className="price-card">
