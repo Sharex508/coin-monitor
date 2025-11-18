@@ -14,6 +14,9 @@ const CoinDetail = ({ symbol, onBack }) => {
   const [sellAmount, setSellAmount] = useState(0);
   const [buyPercentage, setBuyPercentage] = useState(0);
   const [sellPercentage, setSellPercentage] = useState(0);
+  const [tradeLoading, setTradeLoading] = useState(false);
+  const [tradeMessage, setTradeMessage] = useState('');
+  const [tradeMessageType, setTradeMessageType] = useState(''); // 'success' or 'error'
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,6 +84,84 @@ const CoinDetail = ({ symbol, onBack }) => {
     setSellAmount((percentage / 100) * 1000);
   };
 
+  const handleBuy = async () => {
+    // Get credentials from localStorage
+    const clientId = localStorage.getItem('binanceClientId');
+    const clientSecret = localStorage.getItem('binanceClientSecret');
+
+    if (!clientId || !clientSecret) {
+      setTradeMessage('Please set your Binance API credentials in the Admin Panel first.');
+      setTradeMessageType('error');
+      return;
+    }
+
+    if (buyAmount <= 0) {
+      setTradeMessage('Please select an amount to buy.');
+      setTradeMessageType('error');
+      return;
+    }
+
+    try {
+      setTradeLoading(true);
+      setTradeMessage('');
+
+      const response = await axios.post(`${API_URL}/api/trade/buy`, {
+        symbol,
+        amount: buyAmount,
+        client_id: clientId,
+        client_secret: clientSecret
+      });
+
+      setTradeMessage(response.data.message);
+      setTradeMessageType('success');
+    } catch (error) {
+      console.error('Error buying coin:', error);
+      setTradeMessage(error.response?.data?.detail || 'Error buying coin. Please try again.');
+      setTradeMessageType('error');
+    } finally {
+      setTradeLoading(false);
+    }
+  };
+
+  const handleSell = async () => {
+    // Get credentials from localStorage
+    const clientId = localStorage.getItem('binanceClientId');
+    const clientSecret = localStorage.getItem('binanceClientSecret');
+
+    if (!clientId || !clientSecret) {
+      setTradeMessage('Please set your Binance API credentials in the Admin Panel first.');
+      setTradeMessageType('error');
+      return;
+    }
+
+    if (sellAmount <= 0) {
+      setTradeMessage('Please select an amount to sell.');
+      setTradeMessageType('error');
+      return;
+    }
+
+    try {
+      setTradeLoading(true);
+      setTradeMessage('');
+
+      const response = await axios.post(`${API_URL}/api/trade/sell`, {
+        symbol,
+        amount: sellAmount,
+        client_id: clientId,
+        client_secret: clientSecret
+      });
+
+      setTradeMessage(response.data.message);
+      setTradeMessageType('success');
+    } catch (error) {
+      console.error('Error selling coin:', error);
+      setTradeMessage(error.response?.data?.detail || 'Error selling coin. Please try again.');
+      setTradeMessageType('error');
+    } finally {
+      setTradeLoading(false);
+    }
+  };
+
   return (
     <div className="coin-detail">
       <div className="detail-header">
@@ -121,7 +202,7 @@ const CoinDetail = ({ symbol, onBack }) => {
 
       {recentTrades && (
         <div className="recent-trades">
-          <h3>Last 3 Minutes Trading Activity</h3>
+          <h3>Last 30 Seconds Trading Activity</h3>
           <div className="trade-stats">
             <div className="trade-card">
               <h4>Total Trades</h4>
@@ -182,7 +263,13 @@ const CoinDetail = ({ symbol, onBack }) => {
                 className="slider"
               />
             </div>
-            <button className="buy-button">Buy {symbol}</button>
+            <button 
+              className="buy-button"
+              onClick={handleBuy}
+              disabled={tradeLoading || buyAmount <= 0}
+            >
+              {tradeLoading ? 'Processing...' : `Buy ${symbol}`}
+            </button>
           </div>
           <div className="sell-section">
             <h4>Sell {symbol}</h4>
@@ -199,9 +286,21 @@ const CoinDetail = ({ symbol, onBack }) => {
                 className="slider"
               />
             </div>
-            <button className="sell-button">Sell {symbol}</button>
+            <button 
+              className="sell-button"
+              onClick={handleSell}
+              disabled={tradeLoading || sellAmount <= 0}
+            >
+              {tradeLoading ? 'Processing...' : `Sell ${symbol}`}
+            </button>
           </div>
         </div>
+
+        {tradeMessage && (
+          <div className={`trade-message ${tradeMessageType}`}>
+            {tradeMessage}
+          </div>
+        )}
       </div>
 
       <h3>Price History</h3>

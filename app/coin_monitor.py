@@ -358,7 +358,7 @@ def update_coin_monitor(symbol: str, data: dict):
             cursor.close()
             connection.close()
 
-def update_price_history(symbol, current_high, current_low, latest_price, cycle_end_percent=2.0):
+def update_price_history(symbol, current_high, current_low, latest_price, cycle_end_percent=0.5):
     """
     Update the price history for a specific coin based on price cycles.
     A cycle is completed when the price falls by more than cycle_end_percent from its high point.
@@ -716,10 +716,10 @@ def get_recent_trades(symbol: str):
         dict: A dictionary containing recent trade statistics and analysis
     """
     try:
-        # Fetch recent trades from Binance API (last 3 minutes)
+        # Fetch recent trades from Binance API (last 30 seconds)
         # Binance API returns trades in descending order (newest first)
         current_time_ms = int(time.time() * 1000)
-        three_mins_ago_ms = current_time_ms - (3 * 60 * 1000)  # 3 minutes in milliseconds
+        thirty_secs_ago_ms = current_time_ms - (30 * 1000)  # 30 seconds in milliseconds
 
         # First get the most recent 1000 trades (API limit)
         response = requests.get(
@@ -733,13 +733,13 @@ def get_recent_trades(symbol: str):
         response.raise_for_status()
         trades = response.json()
 
-        # Filter trades from the last 3 minutes
-        recent_trades = [trade for trade in trades if trade['time'] >= three_mins_ago_ms]
+        # Filter trades from the last 30 seconds
+        recent_trades = [trade for trade in trades if trade['time'] >= thirty_secs_ago_ms]
 
         if not recent_trades:
             return {
                 "symbol": symbol,
-                "period": "3 minutes",
+                "period": "30 seconds",
                 "total_trades": 0,
                 "buy_trades": 0,
                 "sell_trades": 0,
@@ -779,7 +779,7 @@ def get_recent_trades(symbol: str):
         # Return structured data
         return {
             "symbol": symbol,
-            "period": "3 minutes",
+            "period": "30 seconds",
             "total_trades": total_trades,
             "buy_trades": len(buy_trades),
             "sell_trades": len(sell_trades),

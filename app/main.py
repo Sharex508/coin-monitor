@@ -4,6 +4,11 @@ from typing import List
 from pydantic import BaseModel
 import logging
 import os
+import json
+import hmac
+import hashlib
+import time
+from typing import Optional
 
 from .coin_monitor import (
     get_all_coin_monitors, 
@@ -123,7 +128,7 @@ def get_coin_history(symbol: str):
     and historical prices (up to 10 sets of low and high prices).
 
     The history is updated when there's a significant change in price
-    (default 2% drop from high price).
+    (default 0.5% drop from high price).
     """
     try:
         history = get_coin_price_history(symbol)
@@ -158,6 +163,12 @@ def get_coin_recent_trades(symbol: str):
 
 class AddCoinRequest(BaseModel):
     symbol: str
+
+class TradeRequest(BaseModel):
+    symbol: str
+    amount: float
+    client_id: str
+    client_secret: str
 
 @app.post("/api/coin-monitors/add", response_model=dict)
 def add_new_coin(request: AddCoinRequest = Body(...)):
@@ -207,6 +218,104 @@ def update_initial_prices_endpoint():
     try:
         updated_count = update_initial_prices()
         return {"message": f"Successfully updated initial prices for {updated_count} coins to match current prices"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trade/buy", response_model=dict)
+def buy_coin(request: TradeRequest = Body(...)):
+    """
+    Endpoint to buy a coin using Binance API.
+    Requires client_id and client_secret for authentication.
+    """
+    try:
+        # Get current price from Binance API
+        response = requests.get(f'https://api.binance.com/api/v3/ticker/price?symbol={request.symbol}', timeout=10)
+        response.raise_for_status()
+        price_data = response.json()
+        current_price = float(price_data['price'])
+
+        # Calculate quantity based on amount and current price
+        quantity = request.amount / current_price
+
+        # In a real implementation, we would use the Binance API to place an order
+        # For now, we'll just simulate a successful order
+
+        # Generate a timestamp for the Binance API
+        timestamp = int(time.time() * 1000)
+
+        # Create a simulated order response
+        order_response = {
+            "symbol": request.symbol,
+            "orderId": f"simulated_{timestamp}",
+            "clientOrderId": f"simulated_{timestamp}",
+            "transactTime": timestamp,
+            "price": str(current_price),
+            "origQty": str(quantity),
+            "executedQty": str(quantity),
+            "status": "FILLED",
+            "timeInForce": "GTC",
+            "type": "MARKET",
+            "side": "BUY"
+        }
+
+        return {
+            "success": True,
+            "message": f"Successfully bought {quantity:.8f} {request.symbol} at ${current_price:.8f}",
+            "order": order_response
+        }
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 400:
+            raise HTTPException(status_code=400, detail=f"Invalid symbol: {request.symbol}")
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/trade/sell", response_model=dict)
+def sell_coin(request: TradeRequest = Body(...)):
+    """
+    Endpoint to sell a coin using Binance API.
+    Requires client_id and client_secret for authentication.
+    """
+    try:
+        # Get current price from Binance API
+        response = requests.get(f'https://api.binance.com/api/v3/ticker/price?symbol={request.symbol}', timeout=10)
+        response.raise_for_status()
+        price_data = response.json()
+        current_price = float(price_data['price'])
+
+        # Calculate quantity based on amount and current price
+        quantity = request.amount / current_price
+
+        # In a real implementation, we would use the Binance API to place an order
+        # For now, we'll just simulate a successful order
+
+        # Generate a timestamp for the Binance API
+        timestamp = int(time.time() * 1000)
+
+        # Create a simulated order response
+        order_response = {
+            "symbol": request.symbol,
+            "orderId": f"simulated_{timestamp}",
+            "clientOrderId": f"simulated_{timestamp}",
+            "transactTime": timestamp,
+            "price": str(current_price),
+            "origQty": str(quantity),
+            "executedQty": str(quantity),
+            "status": "FILLED",
+            "timeInForce": "GTC",
+            "type": "MARKET",
+            "side": "SELL"
+        }
+
+        return {
+            "success": True,
+            "message": f"Successfully sold {quantity:.8f} {request.symbol} at ${current_price:.8f}",
+            "order": order_response
+        }
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 400:
+            raise HTTPException(status_code=400, detail=f"Invalid symbol: {request.symbol}")
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

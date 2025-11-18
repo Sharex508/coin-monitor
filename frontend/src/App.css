@@ -11,6 +11,25 @@
   color: white;
   border-radius: 8px 8px 0 0;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-button {
+  background-color: #61dafb;
+  color: #282c34;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.admin-button:hover {
+  background-color: #4fa8c7;
 }
 
 .App-main {

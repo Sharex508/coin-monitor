@@ -216,7 +216,7 @@ Once both servers are running, you can:
 
 ### If using Docker:
 
-- Make sure no other services are using ports 3000, 5432, or 8000
+- Make sure no other services are using ports 3000, 5433, or 8000
 - Check container logs:
   ```bash
   docker-compose logs
@@ -228,4 +228,4 @@ Once both servers are running, you can:
 - The application automatically fetches all USDT trading pairs from Binance
 - Data is refreshed every 2 seconds from the Binance API
 - The UI updates every 5 seconds to show the latest data
-- Price history tracks cycles of price movements, with a cycle completing when price drops 2% from its high
+- Price history tracks cycles of price movements, with a cycle completing when price drops 0.5% from its high

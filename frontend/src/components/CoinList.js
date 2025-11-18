@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import './CoinList.css';
 
 const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'rising', 'falling'
+  const [activeTab, setActiveTab] = useState('all');
   const [sortField, setSortField] = useState('change');
   const [sortDirection, setSortDirection] = useState('desc'); // 'asc' or 'desc'
   const [searchTerm, setSearchTerm] = useState(''); // For search functionality
 
   // Separate coins into rising and falling
-  const risingCoins = coins.filter(coin => coin.latest_price >= coin.initial_price);
-  const fallingCoins = coins.filter(coin => coin.latest_price < coin.initial_price);
+  // A coin is considered falling if it has dropped 0.5% or more from its peak (high_price)
+  const fallingThreshold = 0.995; // 0.5% drop
+  const risingCoins = coins.filter(coin => coin.latest_price >= coin.high_price * fallingThreshold);
+  const fallingCoins = coins.filter(coin => coin.latest_price < coin.high_price * fallingThreshold);
 
   // Filter coins based on search term
   const filterBySearchTerm = (coinsArray) => {
@@ -108,22 +110,9 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
 
       <div className="coin-tabs">
         <button 
-          className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveTab('all')}
+          className="tab-button active"
         >
-          All ({filteredCoins.length})
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'rising' ? 'active' : ''}`}
-          onClick={() => setActiveTab('rising')}
-        >
-          Rising ({filteredRisingCoins.length})
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'falling' ? 'active' : ''}`}
-          onClick={() => setActiveTab('falling')}
-        >
-          Falling ({filteredFallingCoins.length})
+          All Coins ({filteredCoins.length})
         </button>
       </div>
 
@@ -148,111 +137,9 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
         </div>
       </div>
 
-      {activeTab === 'all' ? (
-        <div className="dual-column-container">
-          <div className="column">
-            <div className="column-header">Rising</div>
-            <div className="list-header">
-              <span 
-                className={`symbol ${sortField === 'symbol' ? `sorted ${sortDirection}` : ''}`}
-                onClick={() => handleSortClick('symbol')}
-              >
-                Symbol
-              </span>
-              <span className="cycle">Cycle</span>
-              <span 
-                className={`price ${sortField === 'price' ? `sorted ${sortDirection}` : ''}`}
-                onClick={() => handleSortClick('price')}
-              >
-                Price (USD)
-              </span>
-              <span 
-                className={`change ${sortField === 'change' ? `sorted ${sortDirection}` : ''}`}
-                onClick={() => handleSortClick('change')}
-              >
-                Change
-              </span>
-            </div>
-            <div className="list-body">
-              {filteredRisingCoins.length === 0 ? (
-                <p>{searchTerm ? "No rising coins match your search" : "No rising coins"}</p>
-              ) : (
-                sortCoins(filteredRisingCoins, 'desc').map((coin) => {
-                  const priceChange = coin.latest_price - coin.initial_price;
-                  const priceChangePercent = calculatePercentChange(coin.latest_price, coin.initial_price);
-                  const cycle = getCurrentCycle(coin);
-
-                  return (
-                    <div
-                      key={coin.symbol}
-                      className={`coin-item ${selectedCoin && selectedCoin.symbol === coin.symbol ? 'selected' : ''}`}
-                      onClick={() => onSelectCoin(coin)}
-                    >
-                      <span className="symbol">{coin.symbol}</span>
-                      <span className="cycle">{cycle > 0 ? cycle : '-'}</span>
-                      <span className="price">${coin.latest_price.toFixed(7)}</span>
-                      <span className="change positive">
-                        +{priceChangePercent.toFixed(2)}%
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-          <div className="column">
-            <div className="column-header">Falling</div>
-            <div className="list-header">
-              <span 
-                className={`symbol ${sortField === 'symbol' ? `sorted ${sortDirection}` : ''}`}
-                onClick={() => handleSortClick('symbol')}
-              >
-                Symbol
-              </span>
-              <span className="cycle">Cycle</span>
-              <span 
-                className={`price ${sortField === 'price' ? `sorted ${sortDirection}` : ''}`}
-                onClick={() => handleSortClick('price')}
-              >
-                Price (USD)
-              </span>
-              <span 
-                className={`change ${sortField === 'change' ? `sorted ${sortDirection}` : ''}`}
-                onClick={() => handleSortClick('change')}
-              >
-                Change
-              </span>
-            </div>
-            <div className="list-body">
-              {filteredFallingCoins.length === 0 ? (
-                <p>{searchTerm ? "No falling coins match your search" : "No falling coins"}</p>
-              ) : (
-                sortCoins(filteredFallingCoins, 'desc', true).map((coin) => {
-                  const priceChange = coin.latest_price - coin.initial_price;
-                  const priceChangePercent = calculatePercentChange(coin.latest_price, coin.initial_price);
-                  const cycle = getCurrentCycle(coin);
-
-                  return (
-                    <div
-                      key={coin.symbol}
-                      className={`coin-item ${selectedCoin && selectedCoin.symbol === coin.symbol ? 'selected' : ''}`}
-                      onClick={() => onSelectCoin(coin)}
-                    >
-                      <span className="symbol">{coin.symbol}</span>
-                      <span className="cycle">{cycle > 0 ? cycle : '-'}</span>
-                      <span className="price">${coin.latest_price.toFixed(7)}</span>
-                      <span className="change negative">
-                        {priceChangePercent.toFixed(2)}%
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
+      <div className="dual-column-container">
+        <div className="column">
+          <div className="column-header">Rising</div>
           <div className="list-header">
             <span 
               className={`symbol ${sortField === 'symbol' ? `sorted ${sortDirection}` : ''}`}
@@ -275,14 +162,12 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
             </span>
           </div>
           <div className="list-body">
-            {displayedCoins.length === 0 ? (
-              <p>{searchTerm ? "No coins match your search" : "No coins available"}</p>
+            {filteredRisingCoins.length === 0 ? (
+              <p>{searchTerm ? "No rising coins match your search" : "No rising coins"}</p>
             ) : (
-              displayedCoins.map((coin) => {
-                // Calculate price change percentage safely
+              sortCoins(filteredRisingCoins, 'desc').map((coin) => {
                 const priceChange = coin.latest_price - coin.initial_price;
                 const priceChangePercent = calculatePercentChange(coin.latest_price, coin.initial_price);
-                const isPositive = priceChange >= 0;
                 const cycle = getCurrentCycle(coin);
 
                 return (
@@ -294,8 +179,57 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
                     <span className="symbol">{coin.symbol}</span>
                     <span className="cycle">{cycle > 0 ? cycle : '-'}</span>
                     <span className="price">${coin.latest_price.toFixed(7)}</span>
-                    <span className={`change ${isPositive ? 'positive' : 'negative'}`}>
-                      {isPositive ? '+' : ''}
+                    <span className="change positive">
+                      +{priceChangePercent.toFixed(2)}%
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+        <div className="column">
+          <div className="column-header">Falling</div>
+          <div className="list-header">
+            <span 
+              className={`symbol ${sortField === 'symbol' ? `sorted ${sortDirection}` : ''}`}
+              onClick={() => handleSortClick('symbol')}
+            >
+              Symbol
+            </span>
+            <span className="cycle">Cycle</span>
+            <span 
+              className={`price ${sortField === 'price' ? `sorted ${sortDirection}` : ''}`}
+              onClick={() => handleSortClick('price')}
+            >
+              Price (USD)
+            </span>
+            <span 
+              className={`change ${sortField === 'change' ? `sorted ${sortDirection}` : ''}`}
+              onClick={() => handleSortClick('change')}
+            >
+              Change
+            </span>
+          </div>
+          <div className="list-body">
+            {filteredFallingCoins.length === 0 ? (
+              <p>{searchTerm ? "No falling coins match your search" : "No falling coins"}</p>
+            ) : (
+              sortCoins(filteredFallingCoins, 'desc', true).map((coin) => {
+                const priceChange = coin.latest_price - coin.initial_price;
+                const priceChangePercent = calculatePercentChange(coin.latest_price, coin.initial_price);
+                const cycle = getCurrentCycle(coin);
+
+                return (
+                  <div
+                    key={coin.symbol}
+                    className={`coin-item ${selectedCoin && selectedCoin.symbol === coin.symbol ? 'selected' : ''}`}
+                    onClick={() => onSelectCoin(coin)}
+                  >
+                    <span className="symbol">{coin.symbol}</span>
+                    <span className="cycle">{cycle > 0 ? cycle : '-'}</span>
+                    <span className="price">${coin.latest_price.toFixed(7)}</span>
+                    <span className="change negative">
                       {priceChangePercent.toFixed(2)}%
                     </span>
                   </div>
@@ -303,8 +237,8 @@ const CoinList = ({ coins, onSelectCoin, selectedCoin }) => {
               })
             )}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 };

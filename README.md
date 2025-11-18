@@ -9,7 +9,7 @@ A standalone application for monitoring cryptocurrency prices in real-time, upda
 - Categorizes coins as rising or falling based on price changes
 - Shows percentage gain/loss for each coin
 - Tracks price history by storing up to 10 sets of low and high prices in cycles
-- A cycle is completed when the price falls by more than 2% from its high point
+- A cycle is completed when the price falls by more than 0.5% from its high point
 - When a cycle completes, the history is updated and a new cycle begins
 - Provides API endpoints to retrieve the price history data
 - Runs as a background thread in the FastAPI application
@@ -222,7 +222,7 @@ The history array contains up to 10 sets of low and high prices, with the most r
    - It tracks price cycles for each coin:
      - A cycle begins when a coin's price starts being monitored
      - During a cycle, the high and low prices are continuously updated
-     - A cycle is completed when the price falls by more than 2% from its high point
+     - A cycle is completed when the price falls by more than 0.5% from its high point
      - When a cycle completes, the current high and low prices are stored in history
    - When a cycle completes, it shifts all history values down
    - Each cycle is initialized with slightly different values to ensure unique price history

@@ -101,6 +101,7 @@
   overflow: hidden;
 }
 
+
 .column {
   flex: 1;
   display: flex;
@@ -129,6 +130,7 @@
   background-color: #f8f9fa;
   border-bottom: 1px solid #e0e0e0;
 }
+
 
 .list-header span {
   cursor: pointer;
@@ -181,6 +183,7 @@
   transition: background-color 0.2s;
 }
 
+
 .coin-item:hover {
   background-color: #f5f5f5;
 }
@@ -215,3 +218,5 @@
 .negative {
   color: #dc3545;
 }
+
+

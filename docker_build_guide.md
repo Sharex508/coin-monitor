@@ -105,7 +105,7 @@ docker-compose down
 The PostgreSQL service uses the official PostgreSQL 13 image and:
 - Sets up a database named `coin_monitor`
 - Initializes the database schema using the `create_tables.sql` script
-- Exposes port 5432 for database connections
+- Exposes port 5433 for database connections
 - Includes a health check to ensure the database is ready before starting dependent services
 
 ### Backend API Service
@@ -149,7 +149,7 @@ For a production environment, you might want to make the following changes:
    - **On Windows**: Open Docker Desktop from the Start menu or system tray
    - **On Linux**: Start the Docker service with `sudo systemctl start docker`
 
-2. **Port conflicts**: Make sure ports 3000, 5432, and 8000 are not already in use by other applications.
+2. **Port conflicts**: Make sure ports 3000, 5433, and 8000 are not already in use by other applications.
 
 3. **Container fails to start**: Check the logs for error messages:
    ```bash

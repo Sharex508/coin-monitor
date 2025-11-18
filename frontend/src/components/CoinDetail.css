@@ -403,3 +403,28 @@
 .sell-button:hover {
   background-color: #c82333;
 }
+
+.buy-button:disabled, .sell-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.trade-message {
+  margin-top: 15px;
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.trade-message.success {
+  background-color: rgba(40, 167, 69, 0.1);
+  border: 1px solid #28a745;
+  color: #28a745;
+}
+
+.trade-message.error {
+  background-color: rgba(220, 53, 69, 0.1);
+  border: 1px solid #dc3545;
+  color: #dc3545;
+}

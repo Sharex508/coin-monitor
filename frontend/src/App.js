@@ -3,6 +3,7 @@ import axios from 'axios';
 import './App.css';
 import CoinList from './components/CoinList';
 import CoinDetail from './components/CoinDetail';
+import AdminPanel from './components/AdminPanel';
 
 // Get API URL from environment variable or use default
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -12,6 +13,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCoin, setSelectedCoin] = useState(null);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   useEffect(() => {
     const fetchCoins = async () => {
@@ -64,7 +66,14 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>Coin Price Monitor</h1>
+        <button 
+          className="admin-button"
+          onClick={() => setShowAdminPanel(!showAdminPanel)}
+        >
+          {showAdminPanel ? 'Hide Admin Panel' : 'Admin Panel'}
+        </button>
       </header>
+      {showAdminPanel && <AdminPanel />}
       <main className="App-main">
         {loading ? (
           <p>Loading coin data...</p>
@@ -82,7 +91,7 @@ function App() {
         )}
       </main>
       <footer className="App-footer">
-        <p>Data refreshes automatically every 20 seconds</p>
+        <p>Coin data refreshes automatically every 20 seconds.</p>
       </footer>
     </div>
   );
